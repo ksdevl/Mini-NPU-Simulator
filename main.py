@@ -13,6 +13,7 @@ EPSILON = 1e-9
 MIN_REPEAT = 10
 DATA_FILE = Path(__file__).with_name("data.json")
 
+MAX_PATTERN_SIZE = 1000
 
 def normalize_label(value):
     """입력 라벨을 Cross 또는 X로 통일합니다."""
@@ -108,6 +109,22 @@ def classify_scores(score_cross, score_x):
         return "Cross"
     return "X"
 
+def classify_mode_1(score_a, score_b):
+    """Mode 1에서 필터 A와 B의 점수를 비교합니다."""
+    if abs(score_a - score_b) < EPSILON:
+        return "UNDECIDED"
+
+    if score_a > score_b:
+        return "필터 A"
+
+    return "필터 B"
+
+def format_result(result, mode):
+    """실행 모드에 따라 판정 결과의 출력 문구를 구분합니다."""
+    if result == "UNDECIDED" and mode == 1:
+        return "판정 불가"
+
+    return result
 
 def measure_average_ms(pattern, filter_matrix, repeat=MIN_REPEAT):
     """MAC 연산을 반복 측정하고 1회 평균 시간을 ms로 반환합니다."""
@@ -154,7 +171,7 @@ def run_mode_1():
 
     score_a = mac_operation(pattern, filter_a)
     score_b = mac_operation(pattern, filter_b)
-    result = classify_scores(score_a, score_b)
+    result = classify_mode_1(score_a, score_b)
 
     time_a = measure_average_ms(pattern, filter_a)
     time_b = measure_average_ms(pattern, filter_b)
@@ -162,7 +179,8 @@ def run_mode_1():
     print("\n========== 모드 1 결과 ==========")
     print("필터 A 점수: {:.6f}".format(score_a))
     print("필터 B 점수: {:.6f}".format(score_b))
-    print("판정 결과: {}".format(result))
+    display_result = format_result(result, 1)
+    print("판정 결과: {}".format(display_result))
     print("필터 A 평균 연산 시간: {:.6f} ms".format(time_a))
     print("필터 B 평균 연산 시간: {:.6f} ms".format(time_b))
 
@@ -300,19 +318,23 @@ def run_pattern_generator():
     print("\n========== 패턴 자동 생성 ==========")
 
     while True:
-        raw_size = input("생성할 행렬 크기 N을 입력하세요: ").strip()
-
         try:
-            size = int(raw_size)
-
+            size = int(input("생성할 행렬 크기 N을 입력하세요: "))
+            
             if size <= 0:
                 print("입력 오류: 1 이상의 정수를 입력하세요.")
                 continue
-
+            
+            if size > MAX_PATTERN_SIZE:
+                print("입력 오류: 최대 {}까지만 생성할 수 있습니다.".format(
+                    MAX_PATTERN_SIZE
+            ))
+                continue
+        
             break
-
+    
         except ValueError:
-            print("입력 오류: 정수만 입력하세요.")
+            print("입력 오류: 정수를 입력하세요.")
 
     cross_filter = generate_cross_filter(size)
     x_filter = generate_x_filter(size)

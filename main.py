@@ -259,6 +259,93 @@ def make_demo_3x3():
     ]
     return pattern, cross_filter
 
+def generate_cross_filter(size):
+    """N×N 크기의 Cross 필터를 생성합니다."""
+    if isinstance(size, bool) or not isinstance(size, int) or size <= 0:
+        raise ValueError("행렬 크기는 양의 정수여야 합니다.")
+
+    center_rows = {(size - 1) // 2, size // 2}
+
+    return [
+        [
+            1.0 if row in center_rows or col in center_rows else 0.0
+            for col in range(size)
+        ]
+        for row in range(size)
+    ]
+
+def generate_x_filter(size):
+    """N×N 크기의 X 필터를 생성합니다."""
+    if isinstance(size, bool) or not isinstance(size, int) or size <= 0:
+        raise ValueError("행렬 크기는 양의 정수여야 합니다.")
+
+    return [
+        [
+            1.0 if row == col or row + col == size - 1 else 0.0
+            for col in range(size)
+        ]
+        for row in range(size)
+    ]
+
+def print_matrix(matrix, title):
+    """생성된 행렬을 화면에 출력합니다."""
+    print("\n{}".format(title))
+
+    for row in matrix:
+        print(" ".join("{:g}".format(value) for value in row))
+
+def run_pattern_generator():
+    """사용자가 입력한 크기에 맞춰 Cross와 X 필터를 생성합니다."""
+
+    print("\n========== 패턴 자동 생성 ==========")
+
+    while True:
+        raw_size = input("생성할 행렬 크기 N을 입력하세요: ").strip()
+
+        try:
+            size = int(raw_size)
+
+            if size <= 0:
+                print("입력 오류: 1 이상의 정수를 입력하세요.")
+                continue
+
+            break
+
+        except ValueError:
+            print("입력 오류: 정수만 입력하세요.")
+
+    cross_filter = generate_cross_filter(size)
+    x_filter = generate_x_filter(size)
+
+    print_matrix(cross_filter, "Cross 필터 ({}×{})".format(size, size))
+    print_matrix(x_filter, "X 필터 ({}×{})".format(size, size))
+
+    print("\n========== 생성 결과 검증 ==========")
+    print("Cross 필터 크기: {}×{}".format(
+        len(cross_filter), len(cross_filter)
+    ))
+    print("X 필터 크기: {}×{}".format(
+        len(x_filter), len(x_filter)
+    ))
+
+    validate_matrix(cross_filter, size, "Cross filter")
+    validate_matrix(x_filter, size, "X filter")
+
+    print("Cross 필터 검증: PASS")
+    print("X 필터 검증: PASS")
+
+    pattern = cross_filter
+
+    cross_score = mac_operation(pattern, cross_filter)
+    x_score = mac_operation(pattern, x_filter)
+
+    result = classify_scores(cross_score, x_score)
+
+    print("\n========== MAC 연산 확인 ==========")
+    print("입력 패턴: 생성된 Cross 필터")
+    print("Cross 점수: {}".format(cross_score))
+    print("X 점수: {}".format(x_score))
+    print("판정 결과: {}".format(result))
 
 def run_mode_2():
     """JSON의 모든 패턴을 케이스별로 분석하고 결과를 집계합니다."""
@@ -353,6 +440,7 @@ def main():
         print("================================")
         print("1. 모드 1 - 사용자 입력 (3×3)")
         print("2. 모드 2 - JSON 자동 분석")
+        print("3. 보너스 - 패턴 자동 생성")
         print("0. 종료")
 
         choice = input("메뉴 선택: ").strip()
@@ -361,11 +449,14 @@ def main():
             run_mode_1()
         elif choice == "2":
             run_mode_2()
+        elif choice == "3":
+            run_pattern_generator()
         elif choice == "0":
             print("프로그램을 종료합니다.")
             break
         else:
-            print("잘못된 선택입니다. 0, 1, 2 중 입력하세요.")
+            print("잘못된 선택입니다. 0, 1, 2, 3 중 입력하세요.")
+            
 
 
 if __name__ == "__main__":
